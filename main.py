@@ -1,34 +1,22 @@
 import os
-from flask import Flask, request, jsonify
-from pocketoptionapi.stable_api import PocketOptionAPI
+from flask import Flask, render_template
+from flask_socketio import SocketIO
+from iqoptionapi.stable_api import IQ_Option
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-# --- CONFIGURAÇÃO DA PONTE ---
-# Usei o código que começa com A_ da sua foto
-SSID = "A_OEQ0BLQUmg239qW" 
-api = PocketOptionAPI(SSID)
+# Suas credenciais e SSID
+SSID = "A_OEQ0BLQUmg239qW"
 
 @app.route('/')
-def home():
-    return "Ponte Online!"
+def index():
+    return "Ponte IQ Option Ativa!"
 
-@app.route('/executar', methods=['POST'])
-def executar_ordem():
-    dados = request.json
-    ativo = dados.get('ativo', 'EURUSD_otc')
-    valor = dados.get('valor', 1)
-    direcao = dados.get('direcao') # 'call' ou 'put'
-    tempo = dados.get('tempo', 60)
-
-    check, reason = api.connect()
-    if check:
-        # Comando que envia a ordem para a Pocket Option
-        id_ordem = api.buy_order(ativo, valor, direcao, tempo)
-        return jsonify({"status": "sucesso", "id": id_ordem})
-    else:
-        return jsonify({"status": "erro", "motivo": reason}), 400
+@socketio.on('connect')
+def handle_connect():
+    print("Cliente conectado à ponte IQ Option")
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, host='0.0.0.0', port=port)
